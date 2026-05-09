@@ -1,0 +1,106 @@
+Refactor toàn bộ code JavaScript này để dễ đọc, dễ maintain và dễ review hơn.
+
+Yêu cầu:
+- Giữ nguyên logic và behavior hiện tại.
+- Chuẩn hóa coding style trong toàn file.
+- Tách logic phức tạp thành các function nhỏ, rõ responsibility.
+- Đặt tên biến/function dễ hiểu và nhất quán.
+- Ưu tiên early return để giảm nested code.
+- Xóa duplicate code và xử lý dư thừa.
+- Không over-engineering.
+
+Quy tắc comment:
+- Tất cả comment phải viết bằng tiếng Việt.
+- Mỗi function cần có comment ngắn mô tả chức năng chính.
+- Comment section/folder logic theo dạng:
+  // --- Xử lý format dữ liệu ---
+- Comment function theo dạng:
+  /**
+   * Chuẩn hóa dữ liệu người dùng trước khi gửi API
+   */
+- Chỉ comment phần mục đích hoặc business logic quan trọng.
+- Không comment các dòng code hiển nhiên.
+- Comment phải ngắn gọn, dễ scan khi review PR.
+
+Coding style:
+- Dùng async/await thống nhất nếu phù hợp.
+- Tách condition phức tạp thành biến boolean có tên rõ nghĩa.
+- Hạn chế side effects.
+- Ưu tiên code flow dễ đọc.
+
+Refactor toàn bộ code Golang này để sạch hơn, dễ maintain và dễ review PR hơn.
+
+Yêu cầu:
+- Giữ nguyên logic và behavior hiện tại.
+- Không tự ý đổi business logic.
+- Chuẩn hóa style code theo idiomatic Go.
+- Tách các xử lý phức tạp thành function nhỏ, rõ trách nhiệm.
+- Đặt tên biến/function rõ nghĩa và nhất quán.
+- Giảm nested logic bằng early return.
+- Loại bỏ duplicate code và xử lý dư thừa.
+- Không over-engineering.
+- Ưu tiên readability hơn clever code.
+
+Quy tắc comment:
+- Tất cả comment phải viết bằng tiếng Việt.
+- Mỗi function public/private cần có comment ngắn mô tả chức năng.
+- Comment section theo dạng:
+  // --- Xử lý xác thực người dùng ---
+- Comment function theo dạng:
+  // ValidateToken kiểm tra token và trả về thông tin user
+- Chỉ comment mục đích hoặc business logic quan trọng.
+- Không comment các dòng code hiển nhiên.
+- Comment ngắn gọn, dễ scan khi review PR.
+
+Coding style:
+- Ưu tiên guard clause / early return.
+- Tách logic validate, mapping, formatting riêng.
+- Hạn chế function quá dài.
+- Không lạm dụng interface nếu không cần.
+- Error handling phải rõ ràng và nhất quán.
+- Context flow phải dễ theo dõi.
+- Giữ package structure gọn gàng nếu cần refactor nhiều file.
+
+
+Yêu cầu:
+- Chỉ chỉnh sửa phần HTML + CSS trong file Vue.
+- Không thay đổi script, state, props, emits, API call hoặc bất kỳ logic/behavior hiện tại nào.
+- Không tự ý đổi business logic.
+- Giữ nguyên toàn bộ flow và chức năng hiện có.
+- Tập trung tối ưu CSS để tránh trùng lặp, dư thừa và khó maintain.
+- Ưu tiên tái sử dụng class/style thay vì lặp lại nhiều lần.
+- Loại bỏ CSS không sử dụng hoặc style conflict nếu có.
+- Tối ưu structure CSS để dễ mở rộng về sau.
+- Không over-engineering.
+- Ưu tiên readability, consistency và maintainability.
+
+Quy tắc cho template/style:
+- Giữ cấu trúc template rõ ràng, dễ scan khi review PR.
+- Tách section hợp lý bằng comment.
+- Class name rõ nghĩa và nhất quán.
+- Hạn chế nested quá sâu trong template.
+- Ưu tiên flex/grid hiện đại.
+- Responsive tốt trên mobile/tablet/desktop.
+- Không inline style nếu không thật sự cần thiết.
+- Hạn chế hard-code kích thước/màu sắc lặp lại nhiều nơi.
+- Gom các style dùng chung thành utility hoặc reusable class hợp lý.
+- Tránh duplicate selector và CSS specificity quá cao.
+- Giữ animation/effect nhẹ và hợp lý.
+
+Quy tắc comment:
+- Tất cả comment phải viết bằng tiếng Việt.
+- Comment section theo dạng:
+  <!-- ===== Header ===== -->
+  /* ===== Danh sách sản phẩm ===== */
+- Chỉ comment các block UI quan trọng.
+- Không comment các đoạn HTML/CSS hiển nhiên.
+- Comment ngắn gọn, dễ scan khi review PR.
+
+Coding style:
+- Ưu tiên semantic HTML.
+- CSS organization rõ ràng theo từng section/component.
+- Ưu tiên scoped style nếu đang dùng Vue SFC.
+- Hạn chế selector quá dài.
+- Đặt tên class theo convention nhất quán.
+- Ưu tiên biến CSS cho màu sắc, spacing, radius nếu hợp lý.
+- Giữ code format sạch, đồng đều và dễ maintain.

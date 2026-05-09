@@ -1,0 +1,28 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-employee_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: employee_db
+      MYSQL_USER: quocdt6423
+      MYSQL_PASSWORD: quoc@123456
+      MYSQL_ROOT_PASSWORD: quoc@123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+
+  app:
+    build: ./backend
+    container_name: go-app
+    ports:
+      - "8080:8080"
+    env_file: ./backend/.env
+    depends_on:
+      mysql:
+        condition: service_started
+    restart: on-failure
+
+volumes:
+  mysqldata:
