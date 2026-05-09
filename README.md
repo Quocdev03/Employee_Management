@@ -169,8 +169,8 @@ frontend/
 
 ```mermaid
 erDiagram
-    ROLES ||--o{ USERS : "1-N" }
-    DEPARTMENTS ||--o{ EMPLOYEES : "1-N" }
+    ROLES ||--o{ USERS : "1-N"
+    DEPARTMENTS ||--o{ EMPLOYEES : "1-N"
     EMPLOYEES ||--o| USERS : "1-1"
 
     ROLES {
