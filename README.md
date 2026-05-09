@@ -169,13 +169,13 @@ frontend/
 
 ```mermaid
 erDiagram
-    ROLES ||--o{ USERS : "1-N"
-    DEPARTMENTS ||--o{ EMPLOYEES : "1-N"
-    EMPLOYEES ||--o| USERS : "1-1"
+    ROLES ||--o{ USERS : has
+    DEPARTMENTS ||--o{ EMPLOYEES : has
+    EMPLOYEES ||--o| USERS : linked
 
     ROLES {
         TINYINT id PK
-        VARCHAR name UK "admin, user"
+        VARCHAR name UK
         TIMESTAMP created_at
     }
 
@@ -187,32 +187,41 @@ erDiagram
 
     EMPLOYEES {
         INT id PK
-        VARCHAR name "NOT NULL"
-        ENUM gender "male, female, other"
+        VARCHAR name
+        ENUM gender
         DATE date_of_birth
-        VARCHAR phone UK
-        INT department_id FK "→ departments.id"
+        VARCHAR phone
+        INT department_id FK
         VARCHAR position
-        DECIMAL salary "default 0"
+        DECIMAL salary
         DATE hire_date
-        TINYINT status "1=active, 0=inactive"
+        TINYINT status
         VARCHAR avatar_url
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        TIMESTAMP deleted_at "Soft delete"
+        TIMESTAMP deleted_at
     }
 
     USERS {
         INT id PK
-        VARCHAR email UK "NOT NULL"
-        VARCHAR password_hash "NOT NULL"
-        TINYINT role_id FK "→ roles.id, default 2"
-        INT employee_id FK_UK "→ employees.id, UNIQUE 1-1"
-        BOOLEAN is_active "default true"
+        VARCHAR email
+        VARCHAR password_hash
+        TINYINT role_id FK
+        INT employee_id FK
+        BOOLEAN is_active
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        TIMESTAMP deleted_at "Soft delete"
+        TIMESTAMP deleted_at
     }
+```
+
+```
+Notes:
+- role_id → roles.id
+- department_id → departments.id
+- employee_id → employees.id (1-1 relationship)
+- deleted_at dùng cho soft delete
+- status: 1 = active, 0 = inactive
 ```
 
 ### Chi tiết quan hệ
