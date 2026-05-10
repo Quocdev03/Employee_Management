@@ -21,8 +21,28 @@ func Setup(route *gin.Engine) {
 		// Thông tin dashboard
 		protected.GET("/dashboard", handlers.GetDashboardStats)
 
-		// Mọi user xem được phòng ban
+		// Mọi user xem được phòng ban và chức vụ
 		protected.GET("/departments", handlers.GetDepartments)
+		protected.GET("/departments/:id", handlers.GetDepartmentByID)
+		protected.GET("/departments/:id/positions", handlers.GetPositionsByDepartment)
+
+		// Thêm sửa xoá phòng ban chỉ admin được làm
+		adminDept := protected.Group("/departments")
+		adminDept.Use(middleware.AdminOnlyMiddleware())
+		{
+			adminDept.POST("", handlers.CreateDepartment)
+			adminDept.PUT("/:id", handlers.UpdateDepartment)
+			adminDept.DELETE("/:id", handlers.DeleteDepartment)
+		}
+
+		// Thêm sửa xoá chức vụ chỉ admin được làm
+		adminPos := protected.Group("/positions")
+		adminPos.Use(middleware.AdminOnlyMiddleware())
+		{
+			adminPos.POST("", handlers.CreatePosition)
+			adminPos.PUT("/:id", handlers.UpdatePosition)
+			adminPos.DELETE("/:id", handlers.DeletePosition)
+		}
 
 		// Mọi user có thể xem được nhân viên
 		protected.GET("/employees", handlers.GetEmployeeList)

@@ -4,7 +4,7 @@ import (
 	"ChiQuoc/HocGolang/config"
 	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/models"
-	"net/http"
+	"ChiQuoc/HocGolang/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -16,10 +16,8 @@ func parseDate(dateStr string) (*time.Time, error) {
 	if dateStr == "" {
 		return nil, nil
 	}
-	// Thử format YYYY-MM-DD
 	t, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
-		// Thử format RFC3339
 		t, err = time.Parse(time.RFC3339, dateStr)
 	}
 	if err != nil {
@@ -45,7 +43,7 @@ func toPublicResponse(e models.Employee) dto.EmployeePublicResponse {
 
 func GetEmployeeList(ctx *gin.Context) {
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "4"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
 	search := ctx.Query("search")
 	deptID := ctx.Query("department_id")
 
@@ -60,13 +58,15 @@ func GetEmployeeList(ctx *gin.Context) {
 
 	query := config.DB.Model(&models.Employee{}).
 		Preload("Department").
+		Preload("Position").
+		Preload("Position.Department").
 		Preload("User")
 
 	if search != "" {
 		words := strings.Fields(strings.TrimSpace(search))
 		for _, w := range words {
 			like := "%" + w + "%"
-			query = query.Where("name LIKE ? OR phone LIKE ?", like, like)
+			query = query.Where("employees.name LIKE ? OR employees.phone LIKE ?", like, like)
 		}
 	}
 
@@ -78,63 +78,51 @@ func GetEmployeeList(ctx *gin.Context) {
 	query.Count(&total)
 
 	var employees []models.Employee
-	query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&employees)
-
-	// Admin thấy đầy đủ, nhân viên thường ẩn salary
-	role, _ := ctx.Get("role")
-	if role == "admin" {
-		ctx.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"data":    employees,
-			"total":   total,
-			"page":    page,
-			"limit":   limit,
-		})
+	if err := query.Offset(offset).Limit(limit).Order("employees.created_at DESC").Find(&employees).Error; err != nil {
+		utils.InternalError(ctx, "Không thể lấy danh sách nhân viên")
 		return
 	}
 
-	public := make([]dto.EmployeePublicResponse, len(employees))
-	for i, e := range employees {
-		public[i] = toPublicResponse(e)
+	role, _ := ctx.Get("role")
+	var responseData interface{}
+
+	if role == "admin" {
+		responseData = employees
+	} else {
+		public := make([]dto.EmployeePublicResponse, len(employees))
+		for i, e := range employees {
+			public[i] = toPublicResponse(e)
+		}
+		responseData = public
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    public,
-		"total":   total,
-		"page":    page,
-		"limit":   limit,
+
+	utils.SuccessWithMeta(ctx, responseData, gin.H{
+		"total": total,
+		"page":  page,
+		"limit": limit,
 	})
 }
 
 func GetEmployeeID(ctx *gin.Context) {
 	var employee models.Employee
-
-	if err := config.DB.
-		Preload("Department").
-		Preload("User").
-		First(&employee, ctx.Param("id")).Error; err != nil {
-
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"success": false,
-			"error":   "Không tìm thấy nhân viên!",
-		})
+	if err := config.DB.Preload("Department").Preload("Position").Preload("Position.Department").Preload("User").First(&employee, ctx.Param("id")).Error; err != nil {
+		utils.NotFound(ctx, "Không tìm thấy nhân viên!")
 		return
 	}
 
-	// Admin thấy đầy đủ, nhân viên thường ẩn salary
 	role, _ := ctx.Get("role")
 	if role == "admin" {
-		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": employee})
+		utils.Success(ctx, employee)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": toPublicResponse(employee)})
+	utils.Success(ctx, toPublicResponse(employee))
 }
 
 func CreateEmployee(ctx *gin.Context) {
 	var input dto.CreateEmployeeInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
 
@@ -142,10 +130,7 @@ func CreateEmployee(ctx *gin.Context) {
 	if phone != "" {
 		var exist models.Employee
 		if err := config.DB.Where("phone = ?", phone).First(&exist).Error; err == nil {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"success": false,
-				"error":   "Số điện thoại đã tồn tại",
-			})
+			utils.Conflict(ctx, "Số điện thoại đã tồn tại")
 			return
 		}
 	}
@@ -153,23 +138,33 @@ func CreateEmployee(ctx *gin.Context) {
 	if input.DepartmentID != nil {
 		var dept models.Department
 		if err := config.DB.First(&dept, *input.DepartmentID).Error; err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"error":   "Phòng ban không tồn tại",
-			})
+			utils.BadRequest(ctx, "Phòng ban không tồn tại")
+			return
+		}
+	}
+
+	// Kiểm tra chức vụ có thuộc đúng phòng ban không
+	if input.PositionID != nil {
+		var pos models.Position
+		if err := config.DB.First(&pos, *input.PositionID).Error; err != nil {
+			utils.BadRequest(ctx, "Chức vụ không tồn tại")
+			return
+		}
+		if input.DepartmentID != nil && pos.DepartmentID != *input.DepartmentID {
+			utils.BadRequest(ctx, "Chức vụ không thuộc phòng ban đã chọn")
 			return
 		}
 	}
 
 	hireDate, err := parseDate(input.HireDate)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Định dạng ngày vào làm không hợp lệ"})
+		utils.BadRequest(ctx, "Định dạng ngày vào làm không hợp lệ")
 		return
 	}
 
 	dob, err := parseDate(input.DateOfBirth)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Định dạng ngày sinh không hợp lệ"})
+		utils.BadRequest(ctx, "Định dạng ngày sinh không hợp lệ")
 		return
 	}
 
@@ -178,76 +173,73 @@ func CreateEmployee(ctx *gin.Context) {
 		Gender:       input.Gender,
 		Phone:        phone,
 		DepartmentID: input.DepartmentID,
-		Position:     input.Position,
+		PositionID:   input.PositionID,
 		Salary:       input.Salary,
 		HireDate:     hireDate,
 		DateOfBirth:  dob,
 		Status:       models.StatusActive,
+		AvatarURL:    input.AvatarURL,
 	}
 
 	if err := config.DB.Create(&employee).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Tạo nhân viên thất bại",
-		})
+		utils.InternalError(ctx, "Tạo nhân viên thất bại")
 		return
 	}
 
-	config.DB.Preload("Department").First(&employee, employee.ID)
-
-	ctx.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"data":    employee,
-	})
+	config.DB.Preload("Department").Preload("Position").Preload("Position.Department").First(&employee, employee.ID)
+	utils.Create(ctx, employee)
 }
 
 func UpdateEmployee(ctx *gin.Context) {
 	var employee models.Employee
 	if err := config.DB.First(&employee, ctx.Param("id")).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Không tìm thấy nhân viên!"})
+		utils.NotFound(ctx, "Không tìm thấy nhân viên!")
 		return
 	}
 
 	var input dto.UpdateEmployeeInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
 
 	updates := make(map[string]interface{})
-
-	if input.Name != nil {
-		updates["name"] = *input.Name
-	}
-	if input.Gender != nil {
-		updates["gender"] = *input.Gender
-	}
+	if input.Name != nil { updates["name"] = *input.Name }
+	if input.Gender != nil { updates["gender"] = *input.Gender }
 	if input.Phone != nil {
 		phone := strings.TrimSpace(*input.Phone)
 		if phone != "" {
 			var exist models.Employee
-			if err := config.DB.
-				Where("phone = ? AND id != ?", phone, employee.ID).
-				First(&exist).Error; err == nil {
-				ctx.JSON(http.StatusConflict, gin.H{"success": false, "error": "Số điện thoại đã tồn tại"})
+			if err := config.DB.Where("phone = ? AND id != ?", phone, employee.ID).First(&exist).Error; err == nil {
+				utils.Conflict(ctx, "Số điện thoại đã tồn tại")
 				return
 			}
 		}
 		updates["phone"] = phone
 	}
-	if input.DepartmentID != nil {
-		updates["department_id"] = input.DepartmentID
+	if input.DepartmentID != nil { updates["department_id"] = input.DepartmentID }
+	if input.PositionID != nil {
+		// Kiểm tra chức vụ có thuộc đúng phòng ban không
+		var pos models.Position
+		if err := config.DB.First(&pos, *input.PositionID).Error; err != nil {
+			utils.BadRequest(ctx, "Chức vụ không tồn tại")
+			return
+		}
+		deptID := employee.DepartmentID
+		if input.DepartmentID != nil {
+			deptID = input.DepartmentID
+		}
+		if deptID != nil && pos.DepartmentID != *deptID {
+			utils.BadRequest(ctx, "Chức vụ không thuộc phòng ban đã chọn")
+			return
+		}
+		updates["position_id"] = *input.PositionID
 	}
-	if input.Position != nil {
-		updates["position"] = *input.Position
-	}
-	if input.Salary != nil {
-		updates["salary"] = *input.Salary
-	}
+	if input.Salary != nil { updates["salary"] = *input.Salary }
 	if input.HireDate != nil {
 		hireDate, err := parseDate(*input.HireDate)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Định dạng ngày vào làm không hợp lệ"})
+			utils.BadRequest(ctx, "Định dạng ngày vào làm không hợp lệ")
 			return
 		}
 		updates["hire_date"] = hireDate
@@ -255,41 +247,49 @@ func UpdateEmployee(ctx *gin.Context) {
 	if input.DateOfBirth != nil {
 		dob, err := parseDate(*input.DateOfBirth)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Định dạng ngày sinh không hợp lệ"})
+			utils.BadRequest(ctx, "Định dạng ngày sinh không hợp lệ")
 			return
 		}
 		updates["date_of_birth"] = dob
 	}
-	if input.Status != nil {
-		updates["status"] = *input.Status
-	}
+	if input.Status != nil { updates["status"] = *input.Status }
+	if input.AvatarURL != nil { updates["avatar_url"] = *input.AvatarURL }
 
 	if err := config.DB.Model(&employee).Updates(updates).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Cập nhật thất bại"})
+		utils.InternalError(ctx, "Cập nhật thất bại")
 		return
 	}
 
-	config.DB.Preload("Department").First(&employee, employee.ID)
-	ctx.JSON(http.StatusOK, gin.H{"success": true, "data": employee})
+	config.DB.Preload("Department").Preload("Position").Preload("Position.Department").First(&employee, employee.ID)
+	utils.Success(ctx, employee)
 }
 
 func DeleteEmployee(ctx *gin.Context) {
 	var employee models.Employee
 	if err := config.DB.First(&employee, ctx.Param("id")).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Không tìm thấy nhân viên!"})
+		utils.NotFound(ctx, "Không tìm thấy nhân viên!")
 		return
 	}
 
-	// Xoá tài khoản associated nếu có
-	config.DB.Where("employee_id = ?", employee.ID).Delete(&models.User{})
+	var associatedUser models.User
+	if err := config.DB.Where("employee_id = ?", employee.ID).First(&associatedUser).Error; err == nil {
+		currentUserID, _ := ctx.Get("user")
+		if currentUserID.(uint) == associatedUser.ID {
+			utils.Forbidden(ctx, "Không thể xoá nhân viên liên kết với tài khoản của chính mình")
+			return
+		}
+		if associatedUser.RoleID == 1 {
+			utils.Forbidden(ctx, "Không thể xoá nhân viên là Quản trị viên")
+			return
+		}
+		config.DB.Delete(&associatedUser)
+	}
 
-	// Cập nhật trạng thái thành nghỉ việc trước khi xoá mềm
 	config.DB.Model(&employee).Update("status", models.StatusInactive)
+	if err := config.DB.Delete(&employee).Error; err != nil {
+		utils.InternalError(ctx, "Xoá nhân viên thất bại")
+		return
+	}
 
-	config.DB.Delete(&employee)
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Xoá nhân viên thành công!",
-	})
+	utils.Success(ctx, "Xoá nhân viên thành công")
 }

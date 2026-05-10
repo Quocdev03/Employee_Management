@@ -22,7 +22,8 @@ type Employee struct {
 	Phone        string         `json:"phone" gorm:"unique;not null,index"`
 	DepartmentID *uint          `json:"department_id"`
 	Department   *Department    `json:"department" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Position     string         `json:"position"`
+	PositionID   *uint          `json:"position_id"`
+	Position     *Position      `json:"position" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Salary       float64        `json:"salary" gorm:"type:decimal(15,2);default:0"`
 	HireDate     *time.Time     `json:"hire_date"`
 	Status       Status         `json:"status" gorm:"default:1"`

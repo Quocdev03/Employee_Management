@@ -5,7 +5,7 @@ import (
 	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/middleware"
 	"ChiQuoc/HocGolang/models"
-	"net/http"
+	"ChiQuoc/HocGolang/utils"
 	"os"
 	"time"
 
@@ -17,10 +17,7 @@ import (
 func LoginHandler(ctx *gin.Context) {
 	var input dto.LoginInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		utils.BadRequest(ctx, err.Error())
 		return
 	}
 
@@ -39,31 +36,21 @@ func LoginHandler(ctx *gin.Context) {
 	*/
 	if err := // Preload cả Role lẫn Employee (bao gồm cả Department)
 		config.DB.Preload("Role").Preload("Employee.Department").Where("email = ?", input.Email).First(&user).Error; err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Tài khoản không tồn tại!",
-		})
+		utils.Unauthorized(ctx, "Tài khoản không tồn tại!")
 		return
 	}
 
 	// Kiểm tra người dùng active
 	if !user.IsActive {
-		ctx.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"error":   "Tài khoản bị vô hiệu hoá!",
-		})
+		utils.Forbidden(ctx, "Tài khoản bị vô hiệu hoá!")
 		return
 	}
 
 	//  Kiểm tra pass
 	// So sánh pass input với pass đã được hash
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Sai mật khẩu!",
-		})
+		utils.Unauthorized(ctx, "Sai mật khẩu!")
 		return
-
 	}
 
 	// Đăng ký token
@@ -80,17 +67,13 @@ func LoginHandler(ctx *gin.Context) {
 	// Ký bằng secret
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error": "Lỗi server!",
-		})
+		utils.InternalError(ctx, "Lỗi server!")
 		return
 	}
 
 	// Trả về res
-	ctx.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"token":   tokenString,
+	utils.Success(ctx, gin.H{
+		"token": tokenString,
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,
@@ -106,9 +89,7 @@ func LoginHandler(ctx *gin.Context) {
 				}
 				return ""
 			}(),
-			"role":     user.Role.Name,
+			"role": user.Role.Name,
 		},
 	})
 }
-
-

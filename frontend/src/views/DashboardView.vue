@@ -151,9 +151,6 @@ onMounted(async () => {
 /* ===== Biến thiết kế ===== */
 .dashboard-container {
 	--bg-card: rgba(255, 255, 255, 0.98);
-	--border-color: #e2e8f0;
-	--text-main: #1e293b;
-	--text-muted: #64748b;
 	--radius-lg: 16px;
 	--radius-full: 9999px;
 	--shadow-sm:

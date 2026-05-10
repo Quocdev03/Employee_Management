@@ -4,7 +4,7 @@ import (
 	"ChiQuoc/HocGolang/config"
 	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/models"
-	"net/http"
+	"ChiQuoc/HocGolang/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +35,5 @@ func GetDashboardStats(ctx *gin.Context) {
 		Group("departments.name").
 		Scan(&stats.EmployeesByDept)
 
-	ctx.JSON(http.StatusOK, stats)
-
+	utils.Success(ctx, stats)
 }

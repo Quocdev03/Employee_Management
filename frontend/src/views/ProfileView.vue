@@ -16,7 +16,10 @@
 			<div class="profile-card sidebar-card">
 				<div class="avatar-section">
 					<div class="avatar-container">
-						<img :src="userProfile.avatar_url" class="profile-avatar" />
+						<img
+							:src="userProfile.avatar_url"
+							class="profile-avatar"
+						/>
 					</div>
 					<h2 class="user-name">{{ userProfile.name }}</h2>
 					<p class="user-role-tag">
@@ -30,7 +33,9 @@
 							]"
 						></span>
 						<span>{{
-							userProfile.isActive ? "Đang làm việc" : "Đã nghỉ việc"
+							userProfile.isActive
+								? "Đang làm việc"
+								: "Đã nghỉ việc"
 						}}</span>
 					</div>
 				</div>
@@ -44,7 +49,9 @@
 					</div>
 					<div class="stat-item">
 						<span class="stat-label">Phòng ban:</span>
-						<span class="stat-value">{{ userProfile.department }}</span>
+						<span class="stat-value">{{
+							userProfile.department
+						}}</span>
 					</div>
 				</div>
 			</div>
@@ -71,7 +78,11 @@
 						<div class="info-group">
 							<label>Ngày sinh</label>
 							<div class="value">
-								{{ formatVietnameseDate(userProfile.date_of_birth) }}
+								{{
+									formatVietnameseDate(
+										userProfile.date_of_birth,
+									)
+								}}
 							</div>
 						</div>
 						<div class="info-group">
@@ -102,12 +113,16 @@
 						</div>
 						<div class="info-group">
 							<label>Phòng ban</label>
-							<div class="value">{{ userProfile.department }}</div>
+							<div class="value">
+								{{ userProfile.department }}
+							</div>
 						</div>
 						<div class="info-group">
 							<label>Ngày vào làm</label>
 							<div class="value">
-								{{ formatVietnameseDate(userProfile.hire_date) }}
+								{{
+									formatVietnameseDate(userProfile.hire_date)
+								}}
 							</div>
 						</div>
 						<div class="info-group">
@@ -144,7 +159,7 @@ const userProfile = computed(() => {
 	if (!rawUser) return {};
 
 	const employee = rawUser.employee || {};
-	
+
 	return {
 		email: rawUser.email,
 		name: rawUser.name,
@@ -154,6 +169,7 @@ const userProfile = computed(() => {
 		isAdmin: rawUser.role === "admin",
 		...employee,
 		department: employee.department?.name || "N/A",
+		position: employee.position?.name || "N/A",
 	};
 });
 
@@ -179,7 +195,7 @@ function formatVietnameseDate(dateInput) {
  */
 function formatCurrencyVND(amount) {
 	if (!amount) return "—";
-	
+
 	return new Intl.NumberFormat("vi-VN", {
 		style: "currency",
 		currency: "VND",
@@ -211,17 +227,6 @@ function getRoleLabel(roleCode) {
 
 /* ===== Khai báo biến CSS ===== */
 .profile-view {
-	--primary-color: #3b82f6;
-	--success-color: #10b981;
-	--text-main: #1e293b;
-	--text-muted: #64748b;
-	--text-light: #94a3b8;
-	--bg-card: #ffffff;
-	--bg-light: #f1f5f9;
-	--bg-lighter: #f8fafc;
-	--border-color: #e2e8f0;
-	--border-radius-card: 24px;
-	
 	font-family: "Inter", sans-serif;
 	width: 100%;
 	margin: 0 auto;

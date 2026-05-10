@@ -15,7 +15,7 @@
 			<!-- ===== Biểu Mẫu Đăng Nhập ===== -->
 			<form @submit.prevent="handleLogin" class="login-form">
 				<!-- Nhập Email -->
-				<div class="input-group">
+				<div class="login-input-group">
 					<label for="email">Địa chỉ Email</label>
 					<div class="input-wrapper">
 						<img :src="mailIcon" class="input-icon" />
@@ -30,7 +30,7 @@
 				</div>
 
 				<!-- Nhập Mật Khẩu -->
-				<div class="input-group">
+				<div class="login-input-group">
 					<label for="password">Mật khẩu</label>
 					<div class="input-wrapper">
 						<img :src="lockIcon" class="input-icon" />
@@ -209,13 +209,13 @@ function togglePasswordVisibility() {
 	gap: 1.25rem;
 }
 
-.input-group {
+.login-input-group {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
 }
 
-.input-group label {
+.login-input-group label {
 	font-size: 0.875rem;
 	font-weight: 600;
 	color: #475569;

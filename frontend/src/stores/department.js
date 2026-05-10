@@ -33,9 +33,62 @@ export const useDepartmentStore = defineStore("departments", () => {
 		}
 	}
 
+	/**
+	 * Tạo mới một phòng ban
+	 */
+	async function createDepartment(data) {
+		const res = await api.post("/departments", data);
+		return res.data;
+	}
+
+	/**
+	 * Cập nhật thông tin phòng ban
+	 */
+	async function updateDepartment(id, data) {
+		const res = await api.put(`/departments/${id}`, data);
+		return res.data;
+	}
+
+	/**
+	 * Xoá một phòng ban khỏi hệ thống
+	 */
+	async function deleteDepartment(id) {
+		const res = await api.delete(`/departments/${id}`);
+		return res.data;
+	}
+
+	/**
+	 * Tạo mới một chức vụ trong phòng ban
+	 */
+	async function createPosition(data) {
+		const res = await api.post("/positions", data);
+		return res.data;
+	}
+
+	/**
+	 * Cập nhật tên chức vụ
+	 */
+	async function updatePosition(id, data) {
+		const res = await api.put(`/positions/${id}`, data);
+		return res.data;
+	}
+
+	/**
+	 * Xoá một chức vụ
+	 */
+	async function deletePosition(id) {
+		const res = await api.delete(`/positions/${id}`);
+		return res.data;
+	}
+
 	return {
 		departments,
 		fetchDepartments,
+		createDepartment,
+		updateDepartment,
+		deleteDepartment,
+		createPosition,
+		updatePosition,
+		deletePosition,
 	};
 });
-
