@@ -21,39 +21,23 @@ func LoginHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Gọi tới models user
 	var user models.User
-	// load thêm bảng role Preload - Where chạy sau First()
-	/*
-		SELECT * FROM roles WHERE id = user.role_id;
-		SELECT * FROM users WHERE email = '...' LIMIT 1;
-
-		Preload → config load relation
-		Where   → thêm điều kiện
-		First   → chạy query chính
-		Preload → chạy query phụ (roles)
-		Error   → trả lỗi
-	*/
-	if err := // Preload cả Role lẫn Employee (bao gồm cả Department)
-		config.DB.Preload("Role").Preload("Employee.Department").Where("email = ?", input.Email).First(&user).Error; err != nil {
+	if err := config.DB.Preload("Role").Preload("Employee").Where("email = ?", input.Email).First(&user).Error; err != nil {
 		utils.Unauthorized(ctx, "Tài khoản không tồn tại!")
 		return
 	}
 
-	// Kiểm tra người dùng active
 	if !user.IsActive {
 		utils.Forbidden(ctx, "Tài khoản bị vô hiệu hoá!")
 		return
 	}
 
-	//  Kiểm tra pass
-	// So sánh pass input với pass đã được hash
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
 		utils.Unauthorized(ctx, "Sai mật khẩu!")
 		return
 	}
 
-	// Đăng ký token
+	// Token claims
 	claims := &middleware.Claims{
 		UserID: user.ID,
 		Role:   user.Role.Name,
@@ -62,34 +46,27 @@ func LoginHandler(ctx *gin.Context) {
 		},
 	}
 
-	// Tạo token jwt
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
-	// Ký bằng secret
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
-	if err != nil {
-		utils.InternalError(ctx, "Lỗi server!")
-		return
+	tokenString, _ := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+
+	// Map to AuthUserDTO
+	name := ""
+	avatar := ""
+	if user.Employee != nil {
+		name = user.Employee.Name
+		avatar = user.Employee.AvatarURL
 	}
 
-	// Trả về res
-	utils.Success(ctx, gin.H{
-		"token": tokenString,
-		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name": func() string {
-				if user.Employee != nil {
-					return user.Employee.Name
-				}
-				return ""
-			}(),
-			"avatar_url": func() string {
-				if user.Employee != nil {
-					return user.Employee.AvatarURL
-				}
-				return ""
-			}(),
-			"role": user.Role.Name,
+	res := dto.LoginResponse{
+		Token: tokenString,
+		User: dto.AuthUserDTO{
+			ID:     user.ID,
+			Email:  user.Email,
+			Name:   name,
+			Avatar: avatar,
+			Role:   user.Role.Name,
 		},
-	})
+	}
+
+	utils.Success(ctx, res)
 }

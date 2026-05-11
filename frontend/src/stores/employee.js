@@ -2,6 +2,9 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import api from "@/api";
 
+/**
+ * Store quản lý dữ liệu nhân viên
+ */
 export const useEmployeeStore = defineStore("employee", () => {
 	// --- State ---
 	const employees = ref([]);
@@ -11,27 +14,19 @@ export const useEmployeeStore = defineStore("employee", () => {
 	// --- Actions ---
 
 	/**
-	 * Lấy danh sách nhân viên với các tham số lọc và phân trang
-	 * @param {Object} params - Tham số lọc (page, limit, search, department_id, ...)
+	 * Tải danh sách nhân viên theo bộ lọc
+	 * @param {Object} params
 	 */
 	async function fetchEmployees(params = {}) {
 		loading.value = true;
-
 		try {
 			const res = await api.get("/employees", { params });
-
-			// Chuẩn hóa dữ liệu trả về thành mảng
-			let data = [];
-			if (Array.isArray(res.data)) {
-				data = res.data;
-			} else if (Array.isArray(res)) {
-				data = res;
-			}
-
-			employees.value = data;
-			total.value = res.total || data.length || 0;
+			
+			// Cấu trúc: { success: true, data: [], total: ... }
+			employees.value = res.data || [];
+			total.value = res.total || employees.value.length || 0;
 		} catch (error) {
-			console.error("Lỗi khi lấy danh sách nhân viên:", error);
+			console.error("[EmployeeStore] fetchEmployees failed:", error);
 			employees.value = [];
 			total.value = 0;
 		} finally {
@@ -40,25 +35,25 @@ export const useEmployeeStore = defineStore("employee", () => {
 	}
 
 	/**
-	 * Tạo mới thông tin nhân viên
-	 * @param {Object} employeeData - Dữ liệu nhân viên cần tạo
+	 * Tạo nhân viên mới
+	 * @param {Object} data
 	 */
-	async function createEmployee(employeeData) {
-		return await api.post("/employees", employeeData);
+	async function createEmployee(data) {
+		return await api.post("/employees", data);
 	}
 
 	/**
-	 * Cập nhật thông tin nhân viên hiện có
-	 * @param {number|string} id - ID của nhân viên
-	 * @param {Object} employeeData - Dữ liệu cập nhật
+	 * Cập nhật thông tin nhân viên
+	 * @param {number|string} id
+	 * @param {Object} data
 	 */
-	async function updateEmployee(id, employeeData) {
-		return await api.put(`/employees/${id}`, employeeData);
+	async function updateEmployee(id, data) {
+		return await api.put(`/employees/${id}`, data);
 	}
 
 	/**
-	 * Xóa thông tin nhân viên khỏi hệ thống
-	 * @param {number|string} id - ID của nhân viên cần xóa
+	 * Xóa nhân viên khỏi hệ thống
+	 * @param {number|string} id
 	 */
 	async function deleteEmployee(id) {
 		return await api.delete(`/employees/${id}`);
@@ -74,4 +69,3 @@ export const useEmployeeStore = defineStore("employee", () => {
 		deleteEmployee,
 	};
 });
-

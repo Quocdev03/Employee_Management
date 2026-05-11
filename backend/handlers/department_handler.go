@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"ChiQuoc/HocGolang/config"
+	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/models"
 	"ChiQuoc/HocGolang/utils"
 
@@ -30,9 +31,7 @@ func GetDepartmentByID(ctx *gin.Context) {
 
 // CreateDepartment: Tạo phòng ban mới
 func CreateDepartment(ctx *gin.Context) {
-	var input struct {
-		Name string `json:"name" binding:"required"`
-	}
+	var input dto.DepartmentRequest
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		utils.BadRequest(ctx, "Tên phòng ban không được để trống")
 		return

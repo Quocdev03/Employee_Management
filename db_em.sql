@@ -109,7 +109,7 @@ CREATE TABLE users (
 -- SEED DATA
 -- =============================================
 
-INSERT INTO roles (name) VALUES ('admin'), ('user');
+INSERT INTO roles (name) VALUES ('admin'), ('employee');
 
 INSERT INTO departments (name) VALUES
   ('IT'), ('HR'), ('Finance'), ('Marketing'), ('Sales'), ('Operations');

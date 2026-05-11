@@ -1,7 +1,10 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import api from "../api";
+import api from "@/api";
 
+/**
+ * Store quản lý dữ liệu thống kê bảng điều khiển
+ */
 export const useDashboardStore = defineStore("dashboard", () => {
 	// --- State ---
 	const dashboardData = ref(null);
@@ -10,17 +13,15 @@ export const useDashboardStore = defineStore("dashboard", () => {
 	// --- Actions ---
 
 	/**
-	 * Lấy dữ liệu tổng quan và thống kê cho Dashboard
+	 * Tải dữ liệu tổng quan cho dashboard
 	 */
 	async function fetchDashboardData() {
 		loading.value = true;
 		try {
 			const res = await api.get("/dashboard");
-			
-			// Ưu tiên lấy dữ liệu từ trường data, nếu không thì lấy toàn bộ res
-			dashboardData.value = res.data || res;
+			dashboardData.value = res.data;
 		} catch (error) {
-			console.error("Lỗi khi lấy dữ liệu Dashboard:", error);
+			console.error("[DashboardStore] fetchDashboardData failed:", error);
 			dashboardData.value = null;
 		} finally {
 			loading.value = false;
@@ -33,4 +34,3 @@ export const useDashboardStore = defineStore("dashboard", () => {
 		fetchDashboardData,
 	};
 });
-

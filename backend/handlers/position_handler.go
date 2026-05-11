@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"ChiQuoc/HocGolang/config"
+	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/models"
 	"ChiQuoc/HocGolang/utils"
 
@@ -21,19 +22,9 @@ func GetPositionsByDepartment(ctx *gin.Context) {
 
 // CreatePosition: Thêm chức vụ mới vào phòng ban
 func CreatePosition(ctx *gin.Context) {
-	var input struct {
-		Name         string `json:"name" binding:"required"`
-		DepartmentID uint   `json:"department_id" binding:"required"`
-	}
+	var input dto.CreatePositionRequest
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		utils.BadRequest(ctx, "Tên chức vụ và phòng ban không được để trống")
-		return
-	}
-
-	// Kiểm tra phòng ban tồn tại
-	var dept models.Department
-	if err := config.DB.First(&dept, input.DepartmentID).Error; err != nil {
-		utils.NotFound(ctx, "Phòng ban không tồn tại")
 		return
 	}
 
@@ -63,9 +54,7 @@ func UpdatePosition(ctx *gin.Context) {
 		return
 	}
 
-	var input struct {
-		Name string `json:"name" binding:"required"`
-	}
+	var input dto.UpdatePositionRequest
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		utils.BadRequest(ctx, "Tên chức vụ không được để trống")
 		return

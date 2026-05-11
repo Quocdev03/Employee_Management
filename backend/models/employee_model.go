@@ -28,7 +28,7 @@ type Employee struct {
 	HireDate     *time.Time     `json:"hire_date"`
 	Status       Status         `json:"status" gorm:"default:1"`
 	AvatarURL    string         `json:"avatar_url"`
-	User         *User          `json:"user" gorm:"foreignKey:EmployeeID"`
+	User         *User          `json:"user" gorm:"foreignKey:EmployeeID;references:ID"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `json:"-"`

@@ -12,6 +12,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// --- Helpers ---
+
 func parseDate(dateStr string) (*time.Time, error) {
 	if dateStr == "" {
 		return nil, nil
@@ -26,20 +28,53 @@ func parseDate(dateStr string) (*time.Time, error) {
 	return &t, nil
 }
 
-func toPublicResponse(e models.Employee) dto.EmployeePublicResponse {
-	return dto.EmployeePublicResponse{
+func ensureUserLoaded(e *models.Employee) {
+	if e.User == nil {
+		var user models.User
+		if err := config.DB.Where("employee_id = ?", e.ID).First(&user).Error; err == nil {
+			e.User = &user
+		}
+	}
+}
+
+func mapEmployeeBase(e models.Employee) dto.EmployeeBaseResponse {
+	ensureUserLoaded(&e)
+	email := ""
+	if e.User != nil {
+		email = e.User.Email
+	}
+
+	return dto.EmployeeBaseResponse{
 		ID:          e.ID,
 		Name:        e.Name,
 		Gender:      e.Gender,
+		Email:       email,
 		DateOfBirth: e.DateOfBirth,
 		Phone:       e.Phone,
-		Position:    e.Position,
 		AvatarURL:   e.AvatarURL,
 		Status:      e.Status,
-		Department:  e.Department,
 		HireDate:    e.HireDate,
+		Department:  e.Department,
+		Position:    e.Position,
 	}
 }
+
+func toEmployeeResponse(e models.Employee) dto.EmployeeResponse {
+	return dto.EmployeeResponse{
+		EmployeeBaseResponse: mapEmployeeBase(e),
+		Salary:               e.Salary,
+		User:                 e.User,
+	}
+}
+
+func toEmployeePublicResponse(e models.Employee) dto.EmployeePublicResponse {
+	return dto.EmployeePublicResponse{
+		EmployeeBaseResponse: mapEmployeeBase(e),
+		User:                 e.User,
+	}
+}
+
+// --- Handlers ---
 
 func GetEmployeeList(ctx *gin.Context) {
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
@@ -47,12 +82,8 @@ func GetEmployeeList(ctx *gin.Context) {
 	search := ctx.Query("search")
 	deptID := ctx.Query("department_id")
 
-	if page < 1 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 10
-	}
+	if page < 1 { page = 1 }
+	if limit <= 0 { limit = 10 }
 
 	offset := (page - 1) * limit
 
@@ -84,23 +115,20 @@ func GetEmployeeList(ctx *gin.Context) {
 	}
 
 	role, _ := ctx.Get("role")
-	var responseData interface{}
-
+	
 	if role == "admin" {
-		responseData = employees
-	} else {
-		public := make([]dto.EmployeePublicResponse, len(employees))
-		for i, e := range employees {
-			public[i] = toPublicResponse(e)
+		res := make([]dto.EmployeeResponse, len(employees))
+		for i := range employees {
+			res[i] = toEmployeeResponse(employees[i])
 		}
-		responseData = public
+		utils.SuccessWithMeta(ctx, res, gin.H{"total": total, "page": page, "limit": limit})
+	} else {
+		res := make([]dto.EmployeePublicResponse, len(employees))
+		for i := range employees {
+			res[i] = toEmployeePublicResponse(employees[i])
+		}
+		utils.SuccessWithMeta(ctx, res, gin.H{"total": total, "page": page, "limit": limit})
 	}
-
-	utils.SuccessWithMeta(ctx, responseData, gin.H{
-		"total": total,
-		"page":  page,
-		"limit": limit,
-	})
 }
 
 func GetEmployeeID(ctx *gin.Context) {
@@ -112,11 +140,10 @@ func GetEmployeeID(ctx *gin.Context) {
 
 	role, _ := ctx.Get("role")
 	if role == "admin" {
-		utils.Success(ctx, employee)
-		return
+		utils.Success(ctx, toEmployeeResponse(employee))
+	} else {
+		utils.Success(ctx, toEmployeePublicResponse(employee))
 	}
-
-	utils.Success(ctx, toPublicResponse(employee))
 }
 
 func CreateEmployee(ctx *gin.Context) {
@@ -135,38 +162,8 @@ func CreateEmployee(ctx *gin.Context) {
 		}
 	}
 
-	if input.DepartmentID != nil {
-		var dept models.Department
-		if err := config.DB.First(&dept, *input.DepartmentID).Error; err != nil {
-			utils.BadRequest(ctx, "Phòng ban không tồn tại")
-			return
-		}
-	}
-
-	// Kiểm tra chức vụ có thuộc đúng phòng ban không
-	if input.PositionID != nil {
-		var pos models.Position
-		if err := config.DB.First(&pos, *input.PositionID).Error; err != nil {
-			utils.BadRequest(ctx, "Chức vụ không tồn tại")
-			return
-		}
-		if input.DepartmentID != nil && pos.DepartmentID != *input.DepartmentID {
-			utils.BadRequest(ctx, "Chức vụ không thuộc phòng ban đã chọn")
-			return
-		}
-	}
-
-	hireDate, err := parseDate(input.HireDate)
-	if err != nil {
-		utils.BadRequest(ctx, "Định dạng ngày vào làm không hợp lệ")
-		return
-	}
-
-	dob, err := parseDate(input.DateOfBirth)
-	if err != nil {
-		utils.BadRequest(ctx, "Định dạng ngày sinh không hợp lệ")
-		return
-	}
+	hireDate, _ := parseDate(input.HireDate)
+	dob, _ := parseDate(input.DateOfBirth)
 
 	employee := models.Employee{
 		Name:         input.Name,
@@ -187,7 +184,7 @@ func CreateEmployee(ctx *gin.Context) {
 	}
 
 	config.DB.Preload("Department").Preload("Position").Preload("Position.Department").First(&employee, employee.ID)
-	utils.Create(ctx, employee)
+	utils.Create(ctx, toEmployeeResponse(employee))
 }
 
 func UpdateEmployee(ctx *gin.Context) {
@@ -218,38 +215,14 @@ func UpdateEmployee(ctx *gin.Context) {
 		updates["phone"] = phone
 	}
 	if input.DepartmentID != nil { updates["department_id"] = input.DepartmentID }
-	if input.PositionID != nil {
-		// Kiểm tra chức vụ có thuộc đúng phòng ban không
-		var pos models.Position
-		if err := config.DB.First(&pos, *input.PositionID).Error; err != nil {
-			utils.BadRequest(ctx, "Chức vụ không tồn tại")
-			return
-		}
-		deptID := employee.DepartmentID
-		if input.DepartmentID != nil {
-			deptID = input.DepartmentID
-		}
-		if deptID != nil && pos.DepartmentID != *deptID {
-			utils.BadRequest(ctx, "Chức vụ không thuộc phòng ban đã chọn")
-			return
-		}
-		updates["position_id"] = *input.PositionID
-	}
+	if input.PositionID != nil { updates["position_id"] = *input.PositionID }
 	if input.Salary != nil { updates["salary"] = *input.Salary }
 	if input.HireDate != nil {
-		hireDate, err := parseDate(*input.HireDate)
-		if err != nil {
-			utils.BadRequest(ctx, "Định dạng ngày vào làm không hợp lệ")
-			return
-		}
+		hireDate, _ := parseDate(*input.HireDate)
 		updates["hire_date"] = hireDate
 	}
 	if input.DateOfBirth != nil {
-		dob, err := parseDate(*input.DateOfBirth)
-		if err != nil {
-			utils.BadRequest(ctx, "Định dạng ngày sinh không hợp lệ")
-			return
-		}
+		dob, _ := parseDate(*input.DateOfBirth)
 		updates["date_of_birth"] = dob
 	}
 	if input.Status != nil { updates["status"] = *input.Status }
@@ -260,8 +233,8 @@ func UpdateEmployee(ctx *gin.Context) {
 		return
 	}
 
-	config.DB.Preload("Department").Preload("Position").Preload("Position.Department").First(&employee, employee.ID)
-	utils.Success(ctx, employee)
+	config.DB.Preload("Department").Preload("Position").Preload("Position.Department").Preload("User").First(&employee, employee.ID)
+	utils.Success(ctx, toEmployeeResponse(employee))
 }
 
 func DeleteEmployee(ctx *gin.Context) {
@@ -285,7 +258,6 @@ func DeleteEmployee(ctx *gin.Context) {
 		config.DB.Delete(&associatedUser)
 	}
 
-	config.DB.Model(&employee).Update("status", models.StatusInactive)
 	if err := config.DB.Delete(&employee).Error; err != nil {
 		utils.InternalError(ctx, "Xoá nhân viên thất bại")
 		return

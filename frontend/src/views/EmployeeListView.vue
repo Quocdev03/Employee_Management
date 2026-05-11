@@ -105,10 +105,7 @@
 										{{ emp.name }}
 									</div>
 									<div class="user-info__email">
-										{{
-											emp.user?.email ||
-											"Chưa cấp tài khoản"
-										}}
+										{{ emp.email || (emp.user && emp.user.email) || "—" }}
 									</div>
 								</div>
 							</div>

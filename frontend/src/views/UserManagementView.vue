@@ -112,7 +112,7 @@
 								<span
 									:class="[
 										'badge',
-										`badge--${u.role?.name || 'user'}`,
+										`badge--${u.role?.name || 'employee'}`,
 									]"
 								>
 									{{
@@ -260,13 +260,13 @@
 						v-model="accountForm.role_id"
 						class="form-control form-select input-group__input"
 					>
-						<option :value="ROLE_USER_ID">Nhân viên</option>
 						<option :value="ROLE_ADMIN_ID">Quản trị viên</option>
+						<option :value="ROLE_EMPLOYEE_ID">Nhân viên</option>
 					</select>
 				</div>
 			</div>
 
-			<div class="form-group" v-if="accountForm.role_id === ROLE_USER_ID">
+			<div class="form-group" v-if="accountForm.role_id === ROLE_EMPLOYEE_ID">
 				<label class="form-label"> Liên kết với nhân viên </label>
 				<div class="input-group">
 					<img :src="deptIcon" class="input-group__icon" alt="dept" />
@@ -351,7 +351,7 @@ import deptIcon from "@/assets/icons/department.svg";
 
 // --- Cấu hình và Hằng số ---
 const ROLE_ADMIN_ID = 1;
-const ROLE_USER_ID = 2;
+const ROLE_EMPLOYEE_ID = 2;
 
 // --- Store và Trạng thái ---
 const userStore = useUserStore();
@@ -372,7 +372,7 @@ const accountForm = reactive({
 	email: "",
 	password: "",
 	confirmPassword: "",
-	role_id: ROLE_USER_ID,
+	role_id: ROLE_EMPLOYEE_ID,
 	employee_id: null,
 });
 
@@ -455,7 +455,7 @@ function resetAccountForm() {
 	accountForm.email = "";
 	accountForm.password = "";
 	accountForm.confirmPassword = "";
-	accountForm.role_id = ROLE_USER_ID;
+	accountForm.role_id = ROLE_EMPLOYEE_ID;
 	accountForm.employee_id = null;
 }
 
@@ -468,7 +468,7 @@ function openAccountForm(user = null) {
 
 	if (user) {
 		accountForm.email = user.email || "";
-		accountForm.role_id = user.role_id;
+		accountForm.role_id = user.role_id || ROLE_EMPLOYEE_ID;
 		accountForm.employee_id = user.employee_id || null;
 	}
 
@@ -501,8 +501,8 @@ function validateAccountData() {
 		return "Mật khẩu xác nhận không khớp";
 	}
 
-	// Kiểm tra liên kết nhân viên cho quyền User
-	if (role_id === ROLE_USER_ID && !employee_id) {
+	// Kiểm tra liên kết nhân viên cho quyền Nhân viên
+	if (role_id === ROLE_EMPLOYEE_ID && !employee_id) {
 		return "Vui lòng chọn nhân viên liên kết";
 	}
 
@@ -790,7 +790,7 @@ onMounted(fetchAllData);
 	color: #5b21b6;
 }
 
-.badge--user {
+.badge--employee {
 	background: #e0f2fe;
 	color: #0369a1;
 }

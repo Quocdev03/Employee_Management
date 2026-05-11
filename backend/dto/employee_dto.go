@@ -32,16 +32,30 @@ type UpdateEmployeeInput struct {
 	AvatarURL    *string  `json:"avatar_url"`
 }
 
-// EmployeePublicResponse: Dùng để trả về thông tin nhân viên cho user thường (ẩn lương)
-type EmployeePublicResponse struct {
+// EmployeeBaseResponse: Chứa các trường chung của nhân viên
+type EmployeeBaseResponse struct {
 	ID          uint               `json:"id"`
 	Name        string             `json:"name"`
 	Gender      string             `json:"gender"`
+	Email       string             `json:"email"`
 	DateOfBirth *time.Time         `json:"date_of_birth"`
 	Phone       string             `json:"phone"`
-	Position    *models.Position   `json:"position"`
 	AvatarURL   string             `json:"avatar_url"`
 	Status      models.Status      `json:"status"`
-	Department  *models.Department `json:"department"`
 	HireDate    *time.Time         `json:"hire_date"`
+	Department  *models.Department `json:"department"`
+	Position    *models.Position   `json:"position"`
+}
+
+// EmployeeResponse: Trả về cho Admin (có lương)
+type EmployeeResponse struct {
+	EmployeeBaseResponse
+	Salary float64      `json:"salary"`
+	User   *models.User `json:"user,omitempty"`
+}
+
+// EmployeePublicResponse: Trả về cho Nhân viên (không có lương)
+type EmployeePublicResponse struct {
+	EmployeeBaseResponse
+	User *models.User `json:"user,omitempty"`
 }

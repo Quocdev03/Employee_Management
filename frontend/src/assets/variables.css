@@ -33,4 +33,22 @@
 	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 	--shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 	--shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	--bg-card: rgba(255, 255, 255, 0.98);
+	--radius-lg: 16px;
+	--radius-full: 9999px;
+	--shadow-sm:
+		0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+	--shadow-md:
+		0 10px 25px -5px rgba(0, 0, 0, 0.03),
+		0 8px 10px -6px rgba(0, 0, 0, 0.01);
+	--shadow-hover:
+		0 20px 25px -5px rgba(0, 0, 0, 0.05),
+		0 10px 10px -5px rgba(0, 0, 0, 0.02);
+
+	/* Colors for stat cards */
+	--color-blue: #3b82f6;
+	--color-green: #22c55e;
+	--color-amber: #f59e0b;
+	--color-purple: #a855f7;
 }

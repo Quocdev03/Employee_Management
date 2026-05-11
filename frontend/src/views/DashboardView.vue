@@ -150,24 +150,6 @@ onMounted(async () => {
 
 /* ===== Biến thiết kế ===== */
 .dashboard-container {
-	--bg-card: rgba(255, 255, 255, 0.98);
-	--radius-lg: 16px;
-	--radius-full: 9999px;
-	--shadow-sm:
-		0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-	--shadow-md:
-		0 10px 25px -5px rgba(0, 0, 0, 0.03),
-		0 8px 10px -6px rgba(0, 0, 0, 0.01);
-	--shadow-hover:
-		0 20px 25px -5px rgba(0, 0, 0, 0.05),
-		0 10px 10px -5px rgba(0, 0, 0, 0.02);
-
-	/* Colors for stat cards */
-	--color-blue: #3b82f6;
-	--color-green: #22c55e;
-	--color-amber: #f59e0b;
-	--color-purple: #a855f7;
-
 	font-family: "Inter", sans-serif;
 	color: var(--text-main);
 	padding: 1rem 0;
@@ -189,7 +171,7 @@ onMounted(async () => {
 	background: var(--bg-card);
 	border: 1px solid var(--border-color);
 	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-md);
+	box-shadow: var(--shadow-dashboard);
 	transition:
 		transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
 		box-shadow 0.3s ease;
@@ -197,7 +179,7 @@ onMounted(async () => {
 
 .stat-card:hover {
 	transform: translateY(-4px);
-	box-shadow: var(--shadow-hover);
+	box-shadow: var(--shadow-dashboard-hover);
 }
 
 .stat-icon-wrapper {
@@ -276,7 +258,7 @@ onMounted(async () => {
 
 .dept-card:hover {
 	transform: translateY(-2px);
-	box-shadow: var(--shadow-md);
+	box-shadow: var(--shadow-dashboard);
 }
 
 .dept-header {

@@ -1,5 +1,7 @@
 package dto
 
+import "ChiQuoc/HocGolang/models"
+
 type CreateUserInput struct {
 	Email      string `json:"email" binding:"required,email"`
 	Password   string `json:"password" binding:"required,min=6"`
@@ -12,4 +14,14 @@ type UpdateUserInput struct {
 	Password   string `json:"password"`
 	RoleID     uint   `json:"role_id"`
 	EmployeeID *uint  `json:"employee_id"`
+}
+
+type UserResponse struct {
+	ID         uint             `json:"id"`
+	Email      string           `json:"email"`
+	RoleID     uint             `json:"role_id"`
+	Role       *models.Role     `json:"role,omitempty"`
+	EmployeeID *uint            `json:"employee_id"`
+	Employee   *models.Employee `json:"employee,omitempty"`
+	IsActive   bool             `json:"is_active"`
 }

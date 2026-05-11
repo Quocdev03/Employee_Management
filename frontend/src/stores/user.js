@@ -1,7 +1,10 @@
-import api from "@/api";
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import api from "@/api";
 
+/**
+ * Store quản lý tài khoản người dùng
+ */
 export const useUserStore = defineStore("user", () => {
 	// --- State ---
 	const users = ref([]);
@@ -10,23 +13,15 @@ export const useUserStore = defineStore("user", () => {
 	// --- Actions ---
 
 	/**
-	 * Lấy danh sách toàn bộ người dùng từ hệ thống
+	 * Tải danh sách người dùng hệ thống
 	 */
 	async function fetchUsers() {
 		loading.value = true;
-
 		try {
-			const { success, data } = await api.get("/users");
-
-			const isValidResponse = success && Array.isArray(data);
-			if (!isValidResponse) {
-				users.value = [];
-				return;
-			}
-
-			users.value = data;
+			const res = await api.get("/users");
+			users.value = res.data || [];
 		} catch (error) {
-			console.error("Lỗi khi lấy danh sách người dùng:", error);
+			console.error("[UserStore] fetchUsers failed:", error);
 			users.value = [];
 		} finally {
 			loading.value = false;
@@ -34,25 +29,25 @@ export const useUserStore = defineStore("user", () => {
 	}
 
 	/**
-	 * Tạo tài khoản người dùng mới
-	 * @param {Object} userData - Thông tin người dùng cần tạo
+	 * Tạo tài khoản mới
+	 * @param {Object} data
 	 */
-	async function createUser(userData) {
-		return await api.post("/users", userData);
+	async function createUser(data) {
+		return await api.post("/users", data);
 	}
 
 	/**
-	 * Cập nhật thông tin tài khoản người dùng
-	 * @param {number|string} id - ID của người dùng
-	 * @param {Object} userData - Dữ liệu cập nhật
+	 * Cập nhật thông tin tài khoản
+	 * @param {number|string} id
+	 * @param {Object} data
 	 */
-	async function updateUser(id, userData) {
-		return await api.put(`/users/${id}`, userData);
+	async function updateUser(id, data) {
+		return await api.put(`/users/${id}`, data);
 	}
 
 	/**
-	 * Xóa tài khoản người dùng khỏi hệ thống
-	 * @param {number|string} id - ID của người dùng cần xóa
+	 * Xóa tài khoản khỏi hệ thống
+	 * @param {number|string} id
 	 */
 	async function deleteUser(id) {
 		return await api.delete(`/users/${id}`);
@@ -67,4 +62,3 @@ export const useUserStore = defineStore("user", () => {
 		deleteUser,
 	};
 });
-

@@ -37,7 +37,7 @@ func Seed() {
 }
 
 func SeedRole() {
-	roles := []string{"admin", "user"}
+	roles := []string{"admin", "employee"}
 
 	for _, name := range roles {
 		config.DB.FirstOrCreate(&models.Role{}, models.Role{Name: name})
@@ -330,7 +330,7 @@ func generateEmail(name string) string {
 
 func SeedUser() {
 	var userRole models.Role
-	config.DB.Where("name = ?", "user").First(&userRole)
+	config.DB.Where("name = ?", "employee").First(&userRole)
 
 	var employees []models.Employee
 	config.DB.Find(&employees)

@@ -1,88 +1,66 @@
 import { defineStore } from "pinia";
-import api from "../api";
 import { ref } from "vue";
+import api from "@/api";
 
+/**
+ * Store quản lý phòng ban và chức vụ
+ */
 export const useDepartmentStore = defineStore("departments", () => {
 	// --- State ---
 	const departments = ref([]);
+	const loading = ref(false);
 
 	// --- Actions ---
 
 	/**
-	 * Lấy danh sách toàn bộ phòng ban từ hệ thống
+	 * Tải danh sách phòng ban kèm chức vụ
 	 */
 	async function fetchDepartments() {
+		loading.value = true;
 		try {
 			const res = await api.get("/departments");
-
-			// Chuẩn hóa dữ liệu trả về thành mảng
-			if (Array.isArray(res.data)) {
-				departments.value = res.data;
-				return;
-			}
-
-			if (Array.isArray(res)) {
-				departments.value = res;
-				return;
-			}
-
-			departments.value = [];
+			departments.value = res.data || [];
 		} catch (error) {
-			console.error("Lỗi khi lấy danh sách phòng ban:", error);
+			console.error("[DepartmentStore] fetchDepartments failed:", error);
 			departments.value = [];
+		} finally {
+			loading.value = false;
 		}
 	}
 
 	/**
-	 * Tạo mới một phòng ban
+	 * Quản lý Phòng ban
 	 */
 	async function createDepartment(data) {
-		const res = await api.post("/departments", data);
-		return res.data;
+		return await api.post("/departments", data);
 	}
 
-	/**
-	 * Cập nhật thông tin phòng ban
-	 */
 	async function updateDepartment(id, data) {
-		const res = await api.put(`/departments/${id}`, data);
-		return res.data;
+		return await api.put(`/departments/${id}`, data);
 	}
 
-	/**
-	 * Xoá một phòng ban khỏi hệ thống
-	 */
 	async function deleteDepartment(id) {
-		const res = await api.delete(`/departments/${id}`);
-		return res.data;
+		return await api.delete(`/departments/${id}`);
 	}
 
 	/**
-	 * Tạo mới một chức vụ trong phòng ban
+	 * Quản lý Chức vụ
 	 */
 	async function createPosition(data) {
-		const res = await api.post("/positions", data);
-		return res.data;
+		return await api.post("/positions", data);
 	}
 
-	/**
-	 * Cập nhật tên chức vụ
-	 */
 	async function updatePosition(id, data) {
-		const res = await api.put(`/positions/${id}`, data);
-		return res.data;
+		return await api.put(`/positions/${id}`, data);
 	}
 
-	/**
-	 * Xoá một chức vụ
-	 */
 	async function deletePosition(id) {
-		const res = await api.delete(`/positions/${id}`);
-		return res.data;
+		return await api.delete(`/positions/${id}`);
 	}
 
 	return {
 		departments,
+		loading,
 		fetchDepartments,
 		createDepartment,
 		updateDepartment,

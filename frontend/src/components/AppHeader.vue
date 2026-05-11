@@ -11,19 +11,32 @@
 		<!-- ===== Thông tin User & Đăng xuất ===== -->
 		<div class="header-right">
 			<div class="user-profile">
-				<div class="avatar">
+				<div class="avatar-wrap">
+					<!-- ✅ Bỏ console.log(), dùng me.user?.avatar -->
 					<img
-						v-if="auth.user?.avatar"
-						:src="auth.user?.avatar"
+						v-if="me.user?.avatar"
+						:src="me.user?.avatar"
 						alt="avatar"
-						class="avatar-circle"
+						class="avatar-img"
 					/>
+					<div v-else class="avatar-initials">
+						{{ getInitials(me.user?.name) }}
+					</div>
 				</div>
 				<div class="user-info">
-					<span class="user-email">{{ auth.user?.email }}</span>
-					<span :class="['role-badge', auth.user?.role]">{{
-						auth.user?.role
+					<span class="user-name">{{
+						me.user?.name || "Người dùng"
 					}}</span>
+					<div class="user-meta">
+						<span class="user-email">{{ me.user?.email }}</span>
+						<span :class="['role-badge', me.user?.role]">
+							{{
+								me.user?.role === "admin"
+									? "Quản trị"
+									: "Nhân viên"
+							}}
+						</span>
+					</div>
 				</div>
 			</div>
 			<div class="divider"></div>
@@ -36,9 +49,10 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useMeStore } from "@/stores/me";
 import { useUIStore } from "@/stores/ui";
 
 // Import Icons
@@ -47,13 +61,12 @@ import logoutIcon from "@/assets/icons/log-out.svg";
 
 // --- Khởi tạo Store và Routing ---
 const auth = useAuthStore();
+const me = useMeStore();
 const ui = useUIStore();
 const route = useRoute();
 const router = useRouter();
 
 // --- Cấu hình Tiêu đề Trang ---
-
-// Bản đồ mapping giữa đường dẫn và tiêu đề trang tương ứng
 const PAGE_TITLES = {
 	"/dashboard": "Tổng quan",
 	"/employees": "Nhân viên",
@@ -62,21 +75,38 @@ const PAGE_TITLES = {
 	"/departments": "Phòng Ban",
 };
 
-/**
- * Tự động lấy tiêu đề trang dựa trên đường dẫn hiện tại
- */
 const pageTitle = computed(() => {
 	return PAGE_TITLES[route.path] || "HR System";
+});
+
+// --- Lifecycle ---
+onMounted(() => {
+	// Đảm bảo thông tin Me luôn sẵn sàng để hiển thị avatar/name
+	if (!me.profile) {
+		me.fetchProfile().catch(() => {});
+	}
 });
 
 // --- Xử lý sự kiện ---
 
 /**
- * Thực hiện đăng xuất và điều hướng người dùng về trang đăng nhập
+ * Đăng xuất người dùng
  */
 function handleLogout() {
 	auth.logout();
 	router.push("/login");
+}
+
+/**
+ * Lấy chữ cái đầu (Initials) để làm avatar fallback
+ */
+function getInitials(name) {
+	if (!name || typeof name !== "string") return "?";
+
+	const parts = name.trim().split(" ");
+	if (parts.length === 0) return "?";
+
+	return parts.pop().charAt(0).toUpperCase();
 }
 </script>
 
@@ -123,36 +153,64 @@ function handleLogout() {
 	gap: 0.875rem;
 }
 
-.avatar-circle {
+.avatar-wrap {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #eff6ff;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 42px;
-	height: 42px;
-	background-color: #eff6ff;
+	border: 1px solid #dbeafe;
+}
+
+.avatar-img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.avatar-initials {
+	font-weight: 700;
 	color: #3b82f6;
-	border-radius: 50%;
+	font-size: 1rem;
 }
 
 .user-info {
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
-	gap: 0.2rem;
+	gap: 2px;
+}
+
+.user-name {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: #1e293b;
+	line-height: 1;
+}
+
+.user-meta {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 }
 
 .user-email {
-	font-size: 0.875rem;
-	font-weight: 600;
-	color: #334155;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: #64748b;
+	line-height: 1;
 }
 
 .role-badge {
 	display: inline-flex;
-	padding: 0.15rem 0.5rem;
+	align-items: center;
+	padding: 0 0.5rem;
+	height: 18px;
 	border-radius: 9999px;
-	font-size: 0.7rem;
-	font-weight: 600;
+	font-size: 0.65rem;
+	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 	width: fit-content;
@@ -163,7 +221,11 @@ function handleLogout() {
 	color: #7e22ce;
 }
 
-.role-badge.user,
+.role-badge.user {
+	background: #f0fdf4;
+	color: #15803d;
+}
+
 .role-badge.employee {
 	background: #e0f2fe;
 	color: #0369a1;
@@ -213,7 +275,6 @@ function handleLogout() {
 
 /* ===== Responsive ===== */
 @media (max-width: 1023px) {
-	.user-email,
 	.divider,
 	.logout-text {
 		display: none;

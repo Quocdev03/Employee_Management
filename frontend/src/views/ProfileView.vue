@@ -16,10 +16,7 @@
 			<div class="profile-card sidebar-card">
 				<div class="avatar-section">
 					<div class="avatar-container">
-						<img
-							:src="userProfile.avatar_url"
-							class="profile-avatar"
-						/>
+						<img :src="userProfile.avatar" class="profile-avatar" />
 					</div>
 					<h2 class="user-name">{{ userProfile.name }}</h2>
 					<p class="user-role-tag">
@@ -139,37 +136,50 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useAuthStore } from "@/stores/auth";
+import { computed, onMounted } from "vue";
+import { useMeStore } from "@/stores/me";
 
 // --- Tài nguyên và Biểu tượng ---
 import userBlueIcon from "@/assets/icons/user-blue.svg";
 import briefcaseGreenIcon from "@/assets/icons/briefcase-green.svg";
 
 // --- Store và Dữ liệu nguồn ---
-const authStore = useAuthStore();
+const meStore = useMeStore();
+
+// --- Lifecycle ---
+onMounted(() => {
+	// Nạp dữ liệu cá nhân ngay khi vào trang
+	meStore.fetchProfile().catch(() => {});
+});
 
 // --- Thuộc tính tính toán (Computed) ---
 
 /**
- * Tổng hợp và chuẩn hóa dữ liệu hồ sơ người dùng
+ * Tổng hợp và chuẩn hóa dữ liệu hồ sơ người dùng từ meStore
  */
 const userProfile = computed(() => {
-	const rawUser = authStore.user;
-	if (!rawUser) return {};
-
-	const employee = rawUser.employee || {};
+	// Truy cập trực tiếp vào store để đảm bảo tính reactive
+	const user = meStore.user || {};
+	const emp = meStore.employee || {};
 
 	return {
-		email: rawUser.email,
-		name: rawUser.name,
-		gender: rawUser.gender,
-		role: rawUser.role,
-		isActive: employee.status === 1,
-		isAdmin: rawUser.role === "admin",
-		...employee,
-		department: employee.department?.name || "N/A",
-		position: employee.position?.name || "N/A",
+		// Dữ liệu từ tài khoản (Top-level)
+		id: user.id,
+		email: user.email || "Chưa cập nhật",
+		name: user.name || emp.name || "Người dùng",
+		role: user.role,
+		avatar: user.avatar || emp.avatar_url,
+		
+		// Dữ liệu từ hồ sơ nhân viên (Employee object)
+		gender: emp.gender,
+		date_of_birth: emp.date_of_birth,
+		phone: emp.phone || "Chưa cập nhật",
+		salary: emp.salary || 0,
+		hire_date: emp.hire_date,
+		status: emp.status,
+		isActive: emp.status === 1,
+		department: emp.department?.name || "Chưa có",
+		position: emp.position?.name || "Chưa có",
 	};
 });
 

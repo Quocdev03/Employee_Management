@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"ChiQuoc/HocGolang/config"
+	"ChiQuoc/HocGolang/dto"
 	"ChiQuoc/HocGolang/models"
 	"ChiQuoc/HocGolang/utils"
 
@@ -22,22 +23,21 @@ func MeHandler(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, gin.H{
-		"id":    user.ID,
-		"email": user.Email,
-		"name": func() string {
-			if user.Employee != nil {
-				return user.Employee.Name
-			}
-			return ""
-		}(),
-		"avatar": func() string {
-			if user.Employee != nil {
-				return user.Employee.AvatarURL
-			}
-			return ""
-		}(),
-		"role":     user.Role.Name,
-		"employee": user.Employee,
+	name := ""
+	avatar := ""
+	if user.Employee != nil {
+		name = user.Employee.Name
+		avatar = user.Employee.AvatarURL
+	}
+
+	utils.Success(ctx, dto.MeResponse{
+		User: dto.AuthUserDTO{
+			ID:     user.ID,
+			Email:  user.Email,
+			Name:   name,
+			Avatar: avatar,
+			Role:   user.Role.Name,
+		},
+		Employee: user.Employee,
 	})
 }
